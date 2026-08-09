@@ -1,0 +1,15 @@
+# Sensitive Credentials & Keys
+*.json
+!skills.json
+!chrome-profile-agent/mcp_config.json
+!package.json
+
+# Environment & Dependencies
+node_modules/
+*.log
+.env
+.env.*
+
+# OS Files
+.DS_Store
+Thumbs.db

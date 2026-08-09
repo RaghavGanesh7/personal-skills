@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "playwright-chrome-cdp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp",
+        "--cdp-endpoint",
+        "http://localhost:9222"
+      ],
+      "description": "Connects Playwright MCP to an active Google Chrome browser running with --remote-debugging-port=9222"
+    },
+    "playwright-chrome-persistent": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp",
+        "--browser",
+        "chrome",
+        "--executable-path",
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "--user-data-dir",
+        "${HOME}/Library/Application Support/Google/Chrome"
+      ],
+      "description": "Launches Google Chrome using your main profile directory (Chrome must be closed first)"
+    }
+  }
+}
