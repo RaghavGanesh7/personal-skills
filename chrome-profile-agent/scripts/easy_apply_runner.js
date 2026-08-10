@@ -225,10 +225,14 @@ async function main() {
     console.error('[Easy Apply Agent] Warning: Resume tailoring error:', e.message);
   }
 
-  // Ensure PDF is under 5MB
+  // Ensure PDF is under 5MB (accepts files > 3MB up to 5MB)
   if (fs.existsSync(resumePath)) {
     const pdfSizeMb = fs.statSync(resumePath).size / (1024 * 1024);
-    console.log(`[Easy Apply Agent] Tailored Resume PDF Size: ${pdfSizeMb.toFixed(2)} MB (Max limit: 5 MB)`);
+    if (pdfSizeMb > 5.0) {
+      console.warn(`[Easy Apply Agent] Warning: Tailored Resume PDF Size is ${pdfSizeMb.toFixed(2)} MB, exceeding 5 MB limit.`);
+    } else {
+      console.log(`[Easy Apply Agent] Tailored Resume PDF Size: ${pdfSizeMb.toFixed(2)} MB (Valid, within 5 MB limit)`);
+    }
   }
 
   console.log('[Easy Apply Agent] Clicking Easy Apply button...');
