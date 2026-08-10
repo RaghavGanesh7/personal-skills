@@ -106,10 +106,20 @@ async function fillEasyApplyForm(page, resumePath) {
     if (!checked) {
       const yesRadio = await group.$('input[type="radio"][value="Yes"], input[type="radio"][id*="yes"]');
       if (yesRadio) {
-        await yesRadio.click();
+        try {
+          await yesRadio.click({ force: true, timeout: 2000 });
+        } catch (e) {
+          await yesRadio.dispatchEvent('click');
+        }
       } else {
         const firstRadio = await group.$('input[type="radio"]');
-        if (firstRadio) await firstRadio.click();
+        if (firstRadio) {
+          try {
+            await firstRadio.click({ force: true, timeout: 2000 });
+          } catch (e) {
+            await firstRadio.dispatchEvent('click');
+          }
+        }
       }
     }
   }
@@ -215,10 +225,10 @@ async function main() {
     console.error('[Easy Apply Agent] Warning: Resume tailoring error:', e.message);
   }
 
-  // Ensure PDF is under 3MB
+  // Ensure PDF is under 5MB
   if (fs.existsSync(resumePath)) {
     const pdfSizeMb = fs.statSync(resumePath).size / (1024 * 1024);
-    console.log(`[Easy Apply Agent] Tailored Resume PDF Size: ${pdfSizeMb.toFixed(2)} MB (Max limit: 3 MB)`);
+    console.log(`[Easy Apply Agent] Tailored Resume PDF Size: ${pdfSizeMb.toFixed(2)} MB (Max limit: 5 MB)`);
   }
 
   console.log('[Easy Apply Agent] Clicking Easy Apply button...');

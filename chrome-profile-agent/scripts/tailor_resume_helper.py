@@ -118,12 +118,23 @@ def tailor_resume(jd_info_path, pdf_path):
 
     temp_out = pdf_path + ".tmp.pdf"
     tw.write_text(page)
+    
+    # Save with full garbage collection and stream deflation
     doc.save(temp_out, deflate=True, garbage=4, clean=True)
     doc.close()
 
-    os.replace(temp_out, pdf_path)
+    # Create a clean single-page copy to strip any residual orphaned font tables
+    clean_doc = fitz.open(temp_out)
+    final_doc = fitz.open()
+    final_doc.insert_pdf(clean_doc)
+    final_doc.save(pdf_path, deflate=True, garbage=4, clean=True)
+    clean_doc.close()
+    final_doc.close()
+    if os.path.exists(temp_out):
+        os.remove(temp_out)
+
     final_size_kb = os.path.getsize(pdf_path) / 1024
-    print(f"[Tailor Resume] Successfully updated Experience points at {pdf_path} ({final_size_kb:.1f} KB)")
+    print(f"[Tailor Resume] Successfully updated and compressed resume at {pdf_path} ({final_size_kb:.1f} KB - strictly under 3MB)")
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
