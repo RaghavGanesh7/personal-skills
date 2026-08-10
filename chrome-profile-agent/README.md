@@ -6,7 +6,7 @@ A custom skill for **Google Antigravity** and MCP-compatible AI coding assistant
 
 ## Features
 - **LinkedIn Easy Apply Automation**: Filter jobs by `Easy Apply` (`f_AL=true`), extract JDs, upload tailored resumes, auto-fill screening questions, and submit applications.
-- **Dynamic Resume Tailoring**: Automatically updates `Raghav Ganesh Resume(.net)-new.pdf` using PyMuPDF to match JD keywords while maintaining 100% exact visual layout and size < 5 MB.
+- **Dynamic Resume Tailoring**: Automatically updates `Raghav Ganesh Resume(.net)-new.pdf` using PyMuPDF to match JD keywords while maintaining 100% exact visual layout and size strictly < 2 MB.
 - **Google Sheets Job Tracker Sync**: Logs applications directly to **Job Tracker - Raghav** (`Table1`, range `F:M`).
 - **Preserves Authentication**: Uses your existing Chrome cookies, sessions, extensions, and bookmarks (LinkedIn, GitHub, Google Workspaces).
 - **No Warning Infobars**: Strips `--no-sandbox` and `--password-store=basic` to maintain native macOS Keychain access and prevent security infobars.
@@ -41,4 +41,4 @@ node scripts/easy_apply_runner.js --search ".NET Full Stack Developer" --dry-run
 ```bash
 node scripts/easy_apply_runner.js --search ".NET Developer"
 ```
-*Applies to matching Easy Apply jobs, uploads your tailored PDF resume (< 5MB), fills screening questions, submits the application, and logs the entry to your Google Sheet.*
+*Applies to matching Easy Apply jobs, uploads your tailored PDF resume (strictly < 2MB), fills screening questions, submits the application, and logs the entry to your Google Sheet.*

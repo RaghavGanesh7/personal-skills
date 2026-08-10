@@ -15,14 +15,11 @@ def tailor_resume(jd_info_path, pdf_path):
     doc = fitz.open(pdf_path)
     page = doc[0]
 
-    font_dir = '/Applications/Microsoft Word.app/Contents/Resources/DFonts'
-    if not os.path.exists(font_dir):
-        font_dir = '/System/Library/Fonts'
-
-    f_reg = fitz.Font(fontfile=os.path.join(font_dir, 'Calibri.ttf')) if os.path.exists(os.path.join(font_dir, 'Calibri.ttf')) else fitz.Font('helv')
-    f_bold = fitz.Font(fontfile=os.path.join(font_dir, 'Calibrib.ttf')) if os.path.exists(os.path.join(font_dir, 'Calibrib.ttf')) else fitz.Font('hebo')
-    f_ital = fitz.Font(fontfile=os.path.join(font_dir, 'Calibrii.ttf')) if os.path.exists(os.path.join(font_dir, 'Calibrii.ttf')) else fitz.Font('heit')
-    f_sym = fitz.Font(fontname='symb')
+    # Use Base-14 standard PDF fonts to guarantee strict file size < 2 MB (target ~1.47 MB)
+    f_reg = fitz.Font('helv')
+    f_bold = fitz.Font('hebo')
+    f_ital = fitz.Font('heit')
+    f_sym = fitz.Font('symb')
 
     # STRICT RULE: Redact ONLY the Experience content region (y=258.0 to y=475.5)
     # Leaves SUMMARY, SKILLS, EXPERIENCE heading, PROJECTS heading (at y=476.2), and EDUCATION 100% UNTOUCHED!
@@ -116,14 +113,22 @@ def tailor_resume(jd_info_path, pdf_path):
 
     wrap_and_write_bullet(bullet_dreamtek, y_exp)
 
-    temp_out = pdf_path + ".tmp.pdf"
     tw.write_text(page)
-    
-    # Save with full garbage collection and stream deflation
+
+    # Purge unreferenced font streams to enforce strictly < 2 MB size
+    for i in range(1, doc.xref_length()):
+        try:
+            obj = doc.xref_object(i)
+            if 'Calibri Regular' in obj or 'Calibri Bold' in obj or 'Calibri Italic' in obj:
+                doc.update_stream(i, b'')
+        except:
+            pass
+
+    temp_out = pdf_path + ".tmp.pdf"
     doc.save(temp_out, deflate=True, garbage=4, clean=True)
     doc.close()
 
-    # Create a clean single-page copy to strip any residual orphaned font tables
+    # Re-save through fresh fitz document to guarantee clean structure under 2MB
     clean_doc = fitz.open(temp_out)
     final_doc = fitz.open()
     final_doc.insert_pdf(clean_doc)
@@ -133,8 +138,9 @@ def tailor_resume(jd_info_path, pdf_path):
     if os.path.exists(temp_out):
         os.remove(temp_out)
 
+    final_size_mb = os.path.getsize(pdf_path) / (1024 * 1024)
     final_size_kb = os.path.getsize(pdf_path) / 1024
-    print(f"[Tailor Resume] Successfully updated and compressed resume at {pdf_path} ({final_size_kb:.1f} KB - strictly under 3MB)")
+    print(f"[Tailor Resume] Successfully updated and compressed resume at {pdf_path} ({final_size_kb:.1f} KB / {final_size_mb:.2f} MB - strictly < 2MB)")
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:

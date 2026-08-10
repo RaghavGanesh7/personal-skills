@@ -1,8 +1,8 @@
 ---
 name: chrome-profile-agent
-description: Drive active Google Chrome sessions and user profiles using Playwright MCP on macOS. Automate browser tasks, filter & submit LinkedIn Easy Apply jobs, tailor PDF resumes to JDs (under 5MB), and log job applications to Google Sheets.
+description: Drive active Google Chrome sessions and user profiles using Playwright MCP on macOS. Automate browser tasks, filter & submit LinkedIn Easy Apply jobs, tailor PDF resumes to JDs (strictly under 2MB), and log job applications to Google Sheets.
 metadata:
-  version: 1.4.0
+  version: 1.5.0
   author: Raghav Ganesh
   license: MIT
   tags:
@@ -23,12 +23,12 @@ The **Chrome Profile Agent** connects Google Antigravity to your active Google C
 ## Agent Instructions & Rules
 
 ### 1. Resume File Size Limit Rule
-- **Strict Requirement**: The tailored PDF resume (`Raghav Ganesh Resume(.net)-new.pdf`) MUST stay **strictly under 5 MB** (target size: `~2.0 MB`).
-- **Enforcement**: PyMuPDF script `tailor_resume_helper.py` saves with `deflate=True, garbage=4, clean=True` to compress streams and strip orphaned font objects.
+- **Strict Requirement**: The tailored PDF resume (`Raghav Ganesh Resume(.net)-new.pdf`) MUST stay **strictly under 2 MB** (target size: `~1.5 MB`).
+- **Enforcement**: PyMuPDF script `tailor_resume_helper.py` uses Base-14 standard fonts and stream deflation (`deflate=True, garbage=4, clean=True`) to purge unreferenced font objects and keep the output file size strictly below 2 MB.
 
 ### 2. Comprehensive Easy Apply Form Filling Rules
 When navigating LinkedIn Easy Apply modal dialogs (`.jobs-easy-apply-modal`), the agent MUST systematically check and fill:
-- **Resume Upload**: Attach `Raghav Ganesh Resume(.net)-new.pdf` (< 5MB).
+- **Resume Upload**: Attach `Raghav Ganesh Resume(.net)-new.pdf` (< 2MB).
 - **Textboxes & Number Inputs**:
   - Years of Experience / Skill ratings: Default to `4` years.
   - Notice Period fields: Fill `15 days` or `Immediate`.
@@ -59,7 +59,7 @@ node scripts/easy_apply_runner.js --search ".NET Developer"
 #### Workflow Steps executed by `easy_apply_runner.js`:
 1. Navigates to LinkedIn Jobs with `f_AL=true` (Easy Apply filter).
 2. Selects an Easy Apply job listing and extracts full Job Description (`jdText`).
-3. Executes `tailor_resume_helper.py` to update `Raghav Ganesh Resume(.net)-new.pdf` (strictly < 5MB).
+3. Executes `tailor_resume_helper.py` to update `Raghav Ganesh Resume(.net)-new.pdf` (strictly < 2MB).
 4. Clicks `.jobs-apply-button` to open the Easy Apply modal.
 5. Uploads tailored resume PDF, fills textboxes, handles `<select>` dropdowns and ARIA comboboxes, and answers radio buttons.
 6. Clicks Next $\rightarrow$ Review $\rightarrow$ Submit application.
@@ -97,7 +97,7 @@ node scripts/chrome_runner.js --search ".NET Full Stack Developer"
 ## Workflow Guide for AI Agents
 
 When assisting a user with job application tasks:
-1. Ensure the tailored PDF size remains < 5 MB.
+1. Ensure the tailored PDF size remains strictly < 2 MB.
 2. Execute `scripts/easy_apply_runner.js` with `--search` for the requested role.
 3. Automatically handle textboxes, select dropdowns, comboboxes, radio buttons, and resume upload.
 4. All completed applications will automatically log to **Job Tracker - Raghav** in Google Sheets (`Table1` range `F:M`).
