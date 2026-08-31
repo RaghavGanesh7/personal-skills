@@ -1,6 +1,8 @@
 {
   "entries": [
     { "path": "contract-analyzer" },
-    { "path": "chrome-profile-agent" }
+    { "path": "chrome-profile-agent" },
+    { "path": "test-automation" },
+    { "path": "work-to-doc" }
   ]
 }

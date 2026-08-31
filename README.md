@@ -4,7 +4,15 @@ This repository contains custom, reusable skills for Google Antigravity (AGY) to
 
 ## Available Skills
 
-### 1. [Contract Analyzer](contract-analyzer/SKILL.md)
+### 1. [Work To Doc](work-to-doc/SKILL.md)
+Turn any completed technical implementation, server setup, infrastructure deployment, architectural change, or feature into clean, reusable, easy-to-follow documentation and operational runbooks.
+- **Features**:
+  - Gathers system specs, access credentials, daemon configurations, and storage layouts from the live session.
+  - Interactive destination prompts (`~/Documents/...`, `docs/`, or custom paths).
+  - Generates standardized quick-reference tables, config references, and daily maintenance runbooks.
+  - Includes modular templates for Server Infrastructure, Feature Implementations, and Operational Cheatsheets.
+
+### 2. [Contract Analyzer](contract-analyzer/SKILL.md)
 An employee-centric contract and offer letter auditor. 
 - **Features**:
   - Auto-extracts text from PDF, DOCX, RTF, or TXT documents.
@@ -14,7 +22,7 @@ An employee-centric contract and offer letter auditor.
   - Prompts you interactively to clarify contract ambiguities.
   - Generates a gorgeous, responsive, dashboard-style HTML report (`contract_analysis_report.html`).
 
-### 2. [Chrome Profile Agent](chrome-profile-agent/SKILL.md)
+### 3. [Chrome Profile Agent](chrome-profile-agent/SKILL.md)
 Drive active Google Chrome sessions and user profiles using Playwright MCP on macOS.
 - **Features**:
   - Connects to your active Chrome browser via CDP (`--remote-debugging-port=9222`).
@@ -31,6 +39,7 @@ To make these skills available globally in your Antigravity environment:
 ### Method 1: Copy to Global Config (Recommended)
 Copy skill folders directly into your Antigravity global customizations folder:
 ```bash
+cp -R work-to-doc ~/.gemini/config/skills/
 cp -R contract-analyzer ~/.gemini/config/skills/
 cp -R chrome-profile-agent ~/.gemini/config/skills/
 ```
@@ -39,6 +48,7 @@ cp -R chrome-profile-agent ~/.gemini/config/skills/
 If you only want skills available in a specific project workspace:
 ```bash
 mkdir -p .agents/skills/
+cp -R work-to-doc .agents/skills/
 cp -R contract-analyzer .agents/skills/
 cp -R chrome-profile-agent .agents/skills/
 ```
@@ -48,6 +58,7 @@ To share skills across team projects, include a `skills.json` file in your custo
 ```json
 {
   "entries": [
+    { "path": "path/to/personal-skills/work-to-doc" },
     { "path": "path/to/personal-skills/chrome-profile-agent" },
     { "path": "path/to/personal-skills/contract-analyzer" }
   ]
