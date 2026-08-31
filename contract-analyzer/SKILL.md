@@ -1,6 +1,6 @@
 ---
 name: contract-analyzer
-description: Analyze an employee contract or offer letter to find red flags, calculate in-hand salary after taxes, research local labor laws, and generate a beautiful HTML dashboard report. Trigger on: 'analyze contract', 'contract analysis', 'offer letter review', 'review employee contract', 'check my offer letter', 'contract red flags', 'analyze my offer letter'.
+description: "Analyze an employee contract or offer letter to find red flags, calculate in-hand salary after taxes, research local labor laws, and generate a beautiful HTML dashboard report."
 ---
 
 # Employment Contract Analyzer & Legal Researcher Skill
