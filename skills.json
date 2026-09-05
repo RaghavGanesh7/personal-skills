@@ -2,6 +2,7 @@
   "entries": [
     { "path": "contract-analyzer" },
     { "path": "chrome-profile-agent" },
-    { "path": "work-to-doc" }
+    { "path": "work-to-doc" },
+    { "path": "homelab-gateway" }
   ]
 }

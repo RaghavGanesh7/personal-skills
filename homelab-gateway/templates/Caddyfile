@@ -1,0 +1,74 @@
+# ==========================================
+# Caddy Homelab Gateway Configuration Template
+# ==========================================
+
+# 1. Local Network Access (.home / .local)
+# Uses Caddy's built-in internal CA (tls internal)
+{{LOCAL_DOMAIN}}, {{SERVER_HOSTNAME}}.local {
+    tls internal
+
+    # Endpoint to download Root CA certificate directly on client devices
+    handle /root.crt {
+        root * /data/caddy/pki/authorities/local
+        file_server
+    }
+
+    handle {
+        root * /srv
+        file_server
+    }
+}
+
+# 2. Local Portainer Reverse Proxy
+portainer.home {
+    tls internal
+    reverse_proxy 127.0.0.1:9000
+}
+
+# 3. Local Cockpit Reverse Proxy
+cockpit.home {
+    tls internal
+    reverse_proxy 127.0.0.1:9090
+}
+
+# 4. Direct LAN IP Access
+{{LAN_IP}} {
+    tls internal
+
+    handle /root.crt {
+        root * /data/caddy/pki/authorities/local
+        file_server
+    }
+
+    handle {
+        root * /srv
+        file_server
+    }
+}
+
+# 5. Tailscale Mesh Access (Public Let's Encrypt TLS)
+# Uses standard port 443 with port-free subpaths
+{{TAILSCALE_DOMAIN}} {
+    tls {
+        get_certificate tailscale
+    }
+
+    # Portainer subpath
+    redir /portainer /portainer/
+    handle_path /portainer/* {
+        reverse_proxy 127.0.0.1:9000
+    }
+
+    # Cockpit aliases (redirects /cockpit to /system/)
+    redir /cockpit /system/
+    redir /cockpit/ /system/
+    handle /system* {
+        reverse_proxy 127.0.0.1:9090
+    }
+
+    # Homelab Hub Landing Page
+    handle {
+        root * /srv
+        file_server
+    }
+}

@@ -30,6 +30,16 @@ Drive active Google Chrome sessions and user profiles using Playwright MCP on ma
   - Supports persistent profile directory launch mode.
   - Includes `launch_chrome_cdp.sh` helper script and MCP configuration templates.
 
+### 4. [Homelab Gateway](homelab-gateway/SKILL.md)
+Deploy and manage a complete, secure homelab reverse proxy and remote access gateway on a Linux home server using Docker, Caddy, and Tailscale.
+- **Features**:
+  - Automatically scans active network interfaces, current IP, default gateway, and running Docker containers via `detect_services.sh`.
+  - Locks static LAN IPs in NetworkManager to prevent router DHCP shifts.
+  - Provisions Caddy v2 with automated HTTPS (local CA for internal network, official Let's Encrypt certificates via Tailscale MagicDNS).
+  - Routes services like Portainer and Cockpit on standard HTTPS (port 443) using clean subpaths with zero port numbers.
+  - Generates adaptive landing page dashboards and handles macOS client integration (trusting root CA, Chrome DNS-over-HTTPS bypasses).
+  - Provides end-to-end automated verification and operational maintenance runbooks.
+
 ---
 
 ## Installation & Setup
@@ -42,6 +52,7 @@ Copy skill folders directly into your Antigravity global customizations folder:
 cp -R work-to-doc ~/.gemini/config/skills/
 cp -R contract-analyzer ~/.gemini/config/skills/
 cp -R chrome-profile-agent ~/.gemini/config/skills/
+cp -R homelab-gateway ~/.gemini/config/skills/
 ```
 
 ### Method 2: Copy to Project Workspace
@@ -51,6 +62,7 @@ mkdir -p .agents/skills/
 cp -R work-to-doc .agents/skills/
 cp -R contract-analyzer .agents/skills/
 cp -R chrome-profile-agent .agents/skills/
+cp -R homelab-gateway .agents/skills/
 ```
 
 ### Method 3: Team Sharing via `skills.json` (Recommended for Shared Repos)
@@ -60,7 +72,8 @@ To share skills across team projects, include a `skills.json` file in your custo
   "entries": [
     { "path": "path/to/personal-skills/work-to-doc" },
     { "path": "path/to/personal-skills/chrome-profile-agent" },
-    { "path": "path/to/personal-skills/contract-analyzer" }
+    { "path": "path/to/personal-skills/contract-analyzer" },
+    { "path": "path/to/personal-skills/homelab-gateway" }
   ]
 }
 ```
