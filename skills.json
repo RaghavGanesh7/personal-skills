@@ -3,6 +3,7 @@
     { "path": "contract-analyzer" },
     { "path": "chrome-profile-agent" },
     { "path": "work-to-doc" },
-    { "path": "homelab-gateway" }
+    { "path": "homelab-gateway" },
+    { "path": "repo-to-3d-course" }
   ]
 }

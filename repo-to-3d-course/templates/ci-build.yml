@@ -1,0 +1,27 @@
+name: build
+
+# docs/ is committed and served by GitHub Pages, so CI's job is to prove the
+# committed output still matches what the build produces from the content tree.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build
+      - name: docs/ must be up to date
+        run: |
+          if [ -n "$(git status --porcelain docs)" ]; then
+            echo "docs/ is stale — run 'npm run build' and commit the result:"
+            git status --porcelain docs
+            exit 1
+          fi
+      - run: node tools/check_site.mjs docs

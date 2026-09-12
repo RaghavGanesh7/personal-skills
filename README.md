@@ -42,6 +42,18 @@ Deploy and manage a complete, secure homelab reverse proxy and remote access gat
 
 ---
 
+### 5. [Repo To 3D Course](repo-to-3d-course/SKILL.md)
+Turn any educational GitHub repository (book, course, handbook, lecture notes) into a static, brutalist 3D course website that people can actually read.
+- **Features**:
+  - Copies the upstream markdown verbatim and generates one page per lesson into `docs/` — no framework, two npm dependencies, GitHub Pages ready.
+  - 3D where it aids recognition: a Three.js hero whose geometry reflects the subject, CSS-3D module covers with spine and pointer tilt.
+  - Reader built for long material: heading-first full-text search, live per-lesson outline, reading times, auto "mark as read", resume-where-you-left-off, keyboard-first navigation, light/dark themes.
+  - Build-time Prism highlighting, single-cell-table callouts lifted into real asides, heading anchors and `.md` → `.html` link rewriting.
+  - `scaffold.sh` to start a project, `check_site.mjs` to gate on dead links/anchors and escaping bugs, `shots.mjs` for a headless screenshot matrix (desktop + phone, light + dark).
+  - Licence-first workflow: upstream licence identified and carried over, author credited in every footer and on an About page.
+
+---
+
 ## Installation & Setup
 
 To make these skills available globally in your Antigravity environment:
@@ -53,6 +65,7 @@ cp -R work-to-doc ~/.gemini/config/skills/
 cp -R contract-analyzer ~/.gemini/config/skills/
 cp -R chrome-profile-agent ~/.gemini/config/skills/
 cp -R homelab-gateway ~/.gemini/config/skills/
+cp -R repo-to-3d-course ~/.gemini/config/skills/
 ```
 
 ### Method 2: Copy to Project Workspace
@@ -63,6 +76,7 @@ cp -R work-to-doc .agents/skills/
 cp -R contract-analyzer .agents/skills/
 cp -R chrome-profile-agent .agents/skills/
 cp -R homelab-gateway .agents/skills/
+cp -R repo-to-3d-course .agents/skills/
 ```
 
 ### Method 3: Team Sharing via `skills.json` (Recommended for Shared Repos)
@@ -73,7 +87,8 @@ To share skills across team projects, include a `skills.json` file in your custo
     { "path": "path/to/personal-skills/work-to-doc" },
     { "path": "path/to/personal-skills/chrome-profile-agent" },
     { "path": "path/to/personal-skills/contract-analyzer" },
-    { "path": "path/to/personal-skills/homelab-gateway" }
+    { "path": "path/to/personal-skills/homelab-gateway" },
+    { "path": "path/to/personal-skills/repo-to-3d-course" }
   ]
 }
 ```

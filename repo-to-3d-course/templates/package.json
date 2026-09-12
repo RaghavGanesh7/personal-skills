@@ -1,0 +1,21 @@
+{
+  "name": "course-site",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Static 3D brutalist reading edition of an educational repository",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "serve": "npm run build && python3 -m http.server 8787 --directory docs",
+    "check": "node tools/check_site.mjs docs",
+    "shots": "node tools/shots.mjs"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "marked": "^18.0.0",
+    "prismjs": "^1.30.0"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^24.0.0"
+  }
+}
