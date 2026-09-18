@@ -64,9 +64,17 @@ for (const file of htmlFiles) {
   // 4. obvious content failures
   if (!/<title>[^<]+<\/title>/.test(html)) note("missing title", rel(file));
   if (html.length < 1200) note("suspiciously small page", `${rel(file)} (${html.length} bytes)`);
-  if (/undefined|\[object Object\]|NaN/.test(html.replace(/<script[\s\S]*?<\/script>/g, ""))) {
-    note("template leak", `${rel(file)} contains undefined/[object Object]/NaN`);
-  }
+  // A leak is a template hole, not the words themselves: technical prose talks
+  // about NaN and undefined variables, and Prism emits <span>undefined</span>
+  // for code. Match only the shapes that mean a value went missing.
+  const stripped = html
+    .replace(/<script[\s\S]*?<\/script>/g, "")
+    .replace(/<pre[\s\S]*?<\/pre>/g, "")
+    .replace(/<code[\s\S]*?<\/code>/g, "");
+  const leak = stripped.match(
+    /\[object Object\]|<(?:h1|h2|h3|title|b|a|span|li|dd)\b[^>]*>\s*(?:undefined|NaN)\s*<|="(?:undefined|NaN)"|\/(?:undefined|NaN)\.html/,
+  );
+  if (leak) note("template leak", `${rel(file)} contains ${leak[0].trim()}`);
 }
 
 // 5. search index must point at anchors that exist

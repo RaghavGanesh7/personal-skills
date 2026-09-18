@@ -329,7 +329,8 @@ kbd {
 .card3d__title {
   align-self: center;
   font-family: var(--display); text-transform: uppercase;
-  font-size: 13cqw; line-height: 0.92; letter-spacing: -0.02em; overflow-wrap: break-word; hyphens: auto;
+  font-size: var(--cover-title, 13cqw); line-height: 0.92; letter-spacing: -0.03em;
+  min-width: 0; overflow: hidden; overflow-wrap: break-word; hyphens: auto;
 }
 .card3d__num { font-family: var(--mono); font-size: max(0.375rem, 3.8cqw); letter-spacing: 0.14em; line-height: 1.6; }
 .card3d__num b { font-family: var(--display); font-size: 9cqw; letter-spacing: 0; }
@@ -776,6 +777,56 @@ a.pager__item:hover { transform: translate(-3px, -3px); box-shadow: 7px 7px 0 va
 .foot__dot { color: var(--accent); }
 .foot__reset { font: inherit; letter-spacing: inherit; text-transform: inherit; background: none; border: 0; border-bottom: 1.5px solid var(--ink-3); color: var(--ink-3); cursor: pointer; padding: 0; }
 .foot__reset:hover { color: var(--ink); border-color: var(--ink); }
+
+/* ---------- lesson lede + source metadata ---------- */
+.page__lede {
+  font-family: var(--serif); font-size: 1.125rem; line-height: 1.6;
+  color: var(--ink-2); max-width: 60ch; margin: 0 0 18px;
+  border-left: var(--line-w) solid var(--accent); padding-left: 14px;
+}
+.facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0; margin: 20px 0 0; border: var(--line-w) solid var(--ink); background: var(--paper-2);
+}
+.facts__pair { padding: 10px 14px; border-right: 1px solid color-mix(in srgb, var(--ink) 20%, transparent); }
+.facts__pair:last-child { border-right: 0; }
+.facts dt { margin-bottom: 4px; }
+.facts dd { margin: 0; font-family: var(--ui); font-size: 0.875rem; line-height: 1.45; }
+
+/* ---------- diagrams and embedded figures ----------
+   `.fig`/`.mermaid-figure` also hosts any runtime vendored from the source repo.
+   Such runtimes draw themselves from their own CSS variables: map those onto
+   these tokens here (--blueprint: var(--accent) and so on) and they follow the
+   module accent and both themes instead of shipping a second palette. */
+.fig, .mermaid-figure {
+  margin: 0 0 1.8em; border: var(--line-w) solid var(--ink);
+  background: var(--paper-2); box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column;
+}
+.fig svg, .mermaid-figure svg { max-width: 100%; height: auto; }
+.fig__cap, .mermaid-figure figcaption {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; border-top: var(--line-w) solid var(--ink);
+  font-family: var(--mono); font-size: 0.6875rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-2); background: var(--paper-3);
+}
+.fig__cap .label, .mermaid-figure figcaption .label { background: var(--accent); color: var(--accent-ink); padding: 2px 6px; }
+.mermaid-figure .mermaid {
+  margin: 0; padding: 18px; overflow-x: auto; text-align: center;
+  font-family: var(--mono); font-size: 0.8125rem; color: var(--ink-3);
+  background: none; border: 0;
+}
+.mermaid-figure .mermaid[data-processed] { color: var(--ink); }
+/* mermaid names its own groups .label and .edgeLabel, which collide with this
+   site's uppercase label chip — diagram text renders SHOUTING without this */
+.mermaid-figure svg .label,
+.mermaid-figure svg .edgeLabel,
+.mermaid-figure svg foreignObject * {
+  text-transform: none; letter-spacing: normal; font-family: var(--mono);
+}
+/* a diagram mermaid could not draw falls back to its own source */
+.mermaid-figure.is-unrendered .mermaid { text-align: left; white-space: pre; }
+.mermaid-figure.is-unrendered figcaption::after { content: "· source"; }
 
 /* ---------- reveal on scroll ---------- */
 .reveal { opacity: 0; transform: translateY(18px); }

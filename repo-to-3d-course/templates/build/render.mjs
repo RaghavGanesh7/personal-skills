@@ -61,9 +61,71 @@ function liftCallouts(md) {
   );
 }
 
-/** Escape hand-written copy, honouring `backticks` as inline code. */
+/** Escape hand-written copy (catalog blurbs, ledes), honouring `code` and **bold**. */
 export function inlineCode(s) {
-  return escapeHtml(s).replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+  return escapeHtml(s)
+    .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+}
+
+/**
+ * Many course repos repeat a metadata block directly under the lesson title:
+ *
+ *   # Title
+ *   > one-line epigraph
+ *   **Type:** Build
+ *   **Time:** ~45 minutes
+ *
+ * Pull it apart so the page header can render it as a lede and chips, instead of
+ * leaving four bold lines stranded at the top of the prose. Sources without this
+ * shape simply return empty values and nothing changes.
+ */
+function liftFrontMatter(body) {
+  const facts = {};
+  let epigraph = "";
+  const lines = body.split("\n");
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+    let m;
+    if (!epigraph && (m = /^>\s*(.+)$/.exec(line))) { epigraph = m[1].trim(); i++; continue; }
+    if ((m = /^\*\*([A-Za-z][A-Za-z ]{1,24}):\*\*\s*(.+)$/.exec(line))) { facts[m[1].trim()] = m[2].trim(); i++; continue; }
+    break;
+  }
+  return { facts, epigraph, body: lines.slice(i).join("\n") };
+}
+
+/**
+ * Mermaid parses node labels as markdown, so a label that happens to start with
+ * a list or quote marker — `["- log sigmoid"]`, `["4. AI libraries"]`, `["*"]` —
+ * renders as the words UNSUPPORTED MARKDOWN: LIST instead of the diagram, and
+ * mermaid reports success while doing it. Escaping the marker keeps the label
+ * identical on screen and costs nothing everywhere else. A literal \n in a label
+ * is likewise printed as the characters "\n"; mermaid 11 wants <br/>.
+ */
+const escapeLabel = (label) =>
+  label
+    .replace(/(^|\\n)(\s*)(\d+)\.(\s)/g, (_, a, sp, n, tail) => `${a}${sp}${n}\\.${tail}`)
+    .replace(/(^|\\n)(\s*)>(\s)/g, (_, a, sp, tail) => `${a}${sp}\\>${tail}`)
+    .replace(/(^|\\n)(\s*)([-*+])(\s|$)/g, (_, a, sp, ch, tail) => `${a}${sp}\\${ch}${tail}`);
+
+export function escapeMermaidLabels(src) {
+  return src
+    .replace(/"([^"\n]*)"/g, (_, label) => `"${escapeLabel(label).replace(/\\n/g, "<br/>")}"`)
+    // an unquoted label cannot carry a backslash — mermaid's lexer rejects it —
+    // so quote it first, which is also what makes the escape legal
+    .replace(/\[([^\]"\n]*)\]/g, (all, label) =>
+      /^\s*(?:[-*+]\s|\d+\.\s|>)/.test(label) ? `["${escapeLabel(label)}"]` : all,
+    );
+}
+
+/** Mermaid diagrams are hydrated in the browser by app.js; ship the source. */
+function mermaidHost(code) {
+  return `<figure class="mermaid-figure">
+  <pre class="mermaid">${escapeHtml(escapeMermaidLabels(code))}</pre>
+  <figcaption class="fig__cap"><span class="label">Diagram</span></figcaption>
+</figure>\n`;
 }
 
 function highlight(code, lang) {
@@ -96,7 +158,8 @@ export function renderMarkdown(md, { linkBase = "", dropFirstHeading = false } =
       break;
     }
   }
-  const body = liftCallouts(lines.slice(start).join("\n").trim());
+  const front = liftFrontMatter(lines.slice(start).join("\n").trim());
+  const body = liftCallouts(front.body);
 
   const headings = [];
   const used = new Map();
@@ -114,6 +177,9 @@ export function renderMarkdown(md, { linkBase = "", dropFirstHeading = false } =
     },
     code({ text, lang }) {
       const label = (lang || "text").split(/\s+/)[0];
+      // fences that are not code: diagrams, and whatever widget syntax the
+      // source invented (see the "Embedded runtimes" note in SKILL.md)
+      if (label === "mermaid") return mermaidHost(text);
       const cls = LANG_ALIAS[label] === null ? "" : ` class="language-${LANG_ALIAS[label] || label}"`;
       return `<figure class="code">
   <figcaption class="code__bar"><span class="code__lang">${escapeHtml(label)}</span><button class="code__copy" type="button" data-copy aria-label="Copy code">COPY</button></figcaption>
@@ -156,5 +222,13 @@ export function renderMarkdown(md, { linkBase = "", dropFirstHeading = false } =
     .replace(/\s+/g, " ")
     .trim();
 
-  return { html, headings, title, plain, words: plain.split(" ").filter(Boolean).length };
+  return {
+    html,
+    headings,
+    title,
+    plain,
+    words: plain.split(" ").filter(Boolean).length,
+    facts: front.facts,
+    epigraph: front.epigraph,
+  };
 }

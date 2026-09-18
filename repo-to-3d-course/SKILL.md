@@ -7,7 +7,7 @@ description: >-
   reading times, progress that survives a refresh, keyboard navigation, light/dark themes — then
   ship it to GitHub Pages with the upstream author's credit and licence intact.
 metadata:
-  version: 1.0.0
+  version: 1.1.0
   author: Raghav Ganesh
   license: MIT
   tags:
@@ -82,7 +82,7 @@ material, it does not write curriculum.
     pages.mjs             page shells: landing, module, lesson, plain
     build.mjs             measures content, writes docs/, search index, sitemap, 404
   src/assets/             styles.css (design system), app.js (reader chrome), hero.js (Three.js)
-  tools/                  check_site.mjs (validator), shots.mjs (screenshot matrix)
+  tools/                  check_site.mjs (validator), check_diagrams.mjs, shots.mjs
   docs/                   BUILD OUTPUT — committed, served by GitHub Pages
   .github/workflows/      CI: rebuild and fail if docs/ is stale
 ```
@@ -102,17 +102,31 @@ pages (preface/syllabus), `sitemap.txt`, `.nojekyll`.
 git clone --depth 1 <upstream-url> <scratch>/source && cd <scratch>/source
 ls -R | head -60                                   # shape of the content tree
 cat LICENSE* 2>/dev/null | head -20                # licence: do this before anything else
-wc -c */*.md | tail -3                             # total volume -> is this 20 pages or 2000?
-sed -n 1,3p */ch1.md                               # does every file repeat a banner H1?
-grep -rhoE '^```[a-zA-Z0-9]*' . | sort | uniq -c   # which languages Prism must load
+find . -name '*.md' | wc -l                        # 20 pages or 2000?
+find . -name '*.md' -exec cat {} + | wc -c         # and how much prose
+sed -n 1,8p */ch1.md                               # banner H1? epigraph? metadata block?
+grep -rhoE '^```[a-zA-Z0-9]*' . | sort | uniq -c   # fence languages — and non-code fences
 grep -rn '<img\|<figure' --include=*.md . | head   # figure markup and image paths
-grep -rhoE '\]\([^)]*\.md[^)]*\)' . | sort -u | head  # internal link forms to rewrite
+grep -rhoE '\]\([^)]*\)' --include=*.md . | grep -v http | sort | uniq -c | sort -rn | head
 grep -rn '^| ' --include=*.md . | head             # single-cell tables used as callouts?
+grep -rhoE '^\*\*[A-Za-z ]+:\*\*' --include=*.md . | sort | uniq -c | head  # metadata block?
+ls site web docs public 2>/dev/null                # does the source ship its own web runtime?
 ```
 
 Record: content root, file naming scheme, unit vocabulary (chapter/lesson/part), title line format,
 callout convention, figure convention, image directory names, fence languages, and anything that is
 a stub/draft/cancelled (those get listed as omitted, not shipped as empty pages).
+
+Three findings change the plan and are easy to miss:
+
+- **A lesson may be a directory, not a file** (`phases/<unit>/<lesson>/docs/en.md` plus sibling
+  `assets/`, `code/`, `quiz.json`). Then you need the flattening pass in Phase 3, not a plain copy.
+- **Non-code fences are content.** ```` ```mermaid ```` is a diagram; ```` ```figure ```` or
+  ```` ```widget ```` is usually a hook into the source's own web runtime. Count them —
+  531 figure blocks is not something to drop, it is something to port (see *Embedded runtimes*).
+- **A repeated metadata block** under every title (`**Type:** … **Time:** …`) is structure, not
+  prose: `render.mjs` lifts it into `facts` and the epigraph into a lede, and the lesson header
+  renders them as chips. Nothing to configure, but check that it fired.
 
 ### Phase 2 — Decide the syllabus
 
@@ -121,12 +135,35 @@ content directory), which files belong to it and in what order, one accent colou
 one-line blurb plus a short subtitle for each. Skip README/TOC files — the site generates better
 ones. Decide the vocabulary (`unitLabel`: Book, Module, Part, Track).
 
-### Phase 3 — Scaffold
+### Phase 3 — Scaffold and import the content
 
 ```bash
 bash <skill>/scripts/scaffold.sh <project> <scratch>/source   # copies templates + content
 cd <project> && npm install
 ```
+
+If a lesson is a **directory** rather than a file, skip scaffold's copy (omit the second argument)
+and flatten instead:
+
+```bash
+bash <skill>/scripts/scaffold.sh <project>
+node <skill>/scripts/flatten_tree.mjs <scratch>/source <project> \
+  --units phases --lesson docs/en.md --assets assets
+```
+
+That writes `content/<unit>/<lesson>.md`, namespaces each lesson's images under
+`content/<unit>/assets/<lesson>/`, rewrites the links the move invalidates, and drops
+`tools/.units.json` — the syllabus skeleton for Phase 4.
+
+Two rules make the rewriting safe, and both exist because the naive version corrupted real text:
+**mask fenced code before touching links** (`expert[indices[i]](x)` in a Python block is a valid
+markdown link to a regex), and **resolve each link against the file's real location, rewriting only
+when it lands exactly on a known lesson** (a blind `../../<name>/` rewrite turned the
+`../../etc/passwd` in a sandbox-escape lesson into a link). Re-run the importer whenever you re-pull
+upstream; treat it as a one-shot script and edit it when the layout differs.
+
+Diff the result against the source before moving on — the importer should change links and image
+paths and nothing else.
 
 ### Phase 4 — Fill in `build/catalog.mjs`
 
@@ -152,16 +189,55 @@ file and set `accentInk` to `#111111` on light accents, `#FFFFFF` on saturated o
 Notebooks (`.ipynb`): convert to markdown *first* (e.g. `jupyter nbconvert --to markdown`) into
 `content/`, then treat as markdown. Do not teach the build about notebooks.
 
+**Diagrams** come free: a ```` ```mermaid ```` fence renders as a `<figure class="mermaid-figure">`
+and `app.js` loads mermaid from a CDN only on pages that contain one, re-running it when the theme
+flips. Labels are escaped at build time — see the pitfalls table for why that is not optional.
+
+### Embedded runtimes — port the author's widgets, don't drop them
+
+If the source ships its own site (`site/`, `web/`, `docs/`) it may contain the *real* value: an
+interactive-figure engine, a quiz runner, an animated explainer library, hooked up from a fenced
+block like ```` ```figure\nkv-cache\n``` ````. Rendering that fence as a "see the original site"
+placeholder throws away the best part of the material. Check first, because porting is often cheap:
+
+1. **Is it self-contained?** Grep the runtime for `import `, `require(`, `fetch(`, and for globals
+   it expects. Vanilla files that draw SVG and read CSS variables port as-is; anything reaching for
+   a framework, an API or the source's own DOM does not.
+2. **Copy it verbatim** into `src/assets/<runtime>/` (the build now copies `src/assets` recursively).
+   It is the author's code — keep it unedited and say so in the licence split.
+3. **Learn what it provides by executing it, not by parsing it.** These bundles end with a
+   registration call; run each one in `node:vm` against a stub `window`/`document` that captures the
+   registration, and write an id → file manifest. A regex over the same files missed 47 of 556 ids.
+4. **Load per page.** Emit only that page's slice of the manifest into `<head>` (via `shell({ head })`)
+   and let the runtime's own lazy loader pull the one or two bundles it needs. 1.9MB of widgets must
+   never become 1.9MB on every lesson.
+5. **Re-theme it through your tokens.** Map the runtime's variables onto the design system on the
+   figure wrapper (`--blueprint: var(--accent)`, `--rule-soft: …`) so the widgets take the module
+   accent and both themes instead of shipping a second palette.
+6. **Watch for class-name collisions.** Generic names (`.label`, `.card`, `.grid`) in the vendored
+   runtime or in mermaid's own SVG will inherit your component rules — this is what makes every
+   diagram render in SHOUTING CAPS. Reset them inside the figure wrapper.
+
 ### Phase 6 — Build and validate (gate)
 
 ```bash
 npm run build        # must print the page/module/lesson/word counts
 npm run check        # tools/check_site.mjs: dead links, dead anchors, double-escaped entities,
                      # search-index anchors, template leaks ("undefined" in a page)
+npm run serve &      # needed by the next one
+npm run diagrams     # tools/check_diagrams.mjs: renders every mermaid block, fails on any
+                     # that won't draw (skip only if the source has no diagrams)
 ```
 
-Both must be clean before you look at the design. `check_site.mjs` exists because every one of
-those failures has shipped silently at least once.
+All must be clean before you look at the design. `check_site.mjs` exists because every one of those
+failures has shipped silently at least once; `check_diagrams.mjs` exists because mermaid does not
+throw on a bad label — it draws the words `UNSUPPORTED MARKDOWN: LIST` into the SVG and *returns
+successfully*, so a broken diagram looks identical to a working one from every other angle.
+
+Read the check output before believing it. A validator that flags real prose is a validator people
+learn to ignore: this material legitimately contains the words `NaN` and `undefined`, so the
+template-leak rule matches only template-hole shapes (`[object Object]`, `<h1>undefined</h1>`,
+`href="NaN"`) outside `<code>`/`<pre>`. If a rule fires on content, fix the rule.
 
 ### Phase 7 — Look at it (gate)
 
@@ -246,6 +322,16 @@ landing page (localStorage only), heading-first search, `[`/`]` paging, `c` cont
 | 404s only on GitHub Pages | root-relative (`/assets/...`) paths break under a `/<repo>/` subpath — keep every href depth-relative (`rel` prefix per page) |
 | Snap-packaged Chromium writes no screenshot | confinement blocks paths outside `$HOME`; use puppeteer-core with an explicit `executablePath`, output under the project |
 | Grid shows empty bordered cells | `auto-fit` with a fixed minmax leaves orphans; pin explicit column counts per breakpoint |
+| Diagram renders the words `UNSUPPORTED MARKDOWN: LIST` | mermaid parses labels as markdown, so `["- log sigmoid"]`, `["4. AI libraries"]` and `["*"]` are lists. `escapeMermaidLabels()` escapes the marker; unquoted labels must be **quoted first**, because mermaid's lexer rejects a backslash outside quotes |
+| `\n` shows up inside a diagram label | mermaid 11 does not honour a literal `\n`; it wants `<br/>` (handled in `escapeMermaidLabels`) |
+| Every diagram renders in SHOUTING CAPS | mermaid names its own SVG groups `.label`/`.edgeLabel`, which inherit the site's uppercase label chip — reset `text-transform` inside the figure wrapper |
+| Cover title breaks mid-word (`FOUNDATIO/NS`) | `cqw` alone is not enough for a long unbreakable word; size the type from the longest word (`112 / longest` cqw) |
+| Search results jump to a heading that isn't there | the index split `^## ` across the whole file, including headings **inside fenced blocks** (prompt templates are full of `## Role`); strip fences before splitting |
+| Literal `**bold**` on the About page | hand-written catalog copy runs through `inlineCode()`, which honoured only backticks |
+| `ENOTDIR`/missing assets after vendoring a runtime | `build.mjs` copied `src/assets` file-by-file; it must be `cpSync(..., { recursive: true })` |
+| Importer silently corrupts prose | a whole-file `../` rewrite hits `../../etc/passwd` in a sandbox lesson, and a `](x)` regex hits `expert[indices[i]](x)` in a code block — mask fences, and rewrite only links that resolve exactly onto a known lesson |
+| Search feels heavy on a phone | the index is one JSON fetch: 5,000 entries × 260-char snippets is 2.2MB. `SITE.snippetChars` (160) halves it; check the gzipped size, not the raw one |
+| Commits land under the wrong GitHub account | a mis-set `user.email` attributes the push to whoever owns that address; verify with `gh api repos/<o>/<r>/commits --jq '.[0].author.login'` |
 
 ---
 
@@ -256,12 +342,15 @@ landing page (localStorage only), heading-first search, `[`/`]` paging, `c` cont
 `repo`, `baseUrl`, `footerLine`, `about`, `unitLabel`, `unitLabelPlural`, `heroLines[]`,
 `heroFillLine`, `heroOutlineLine`, `heroKicker`, `ticker[]`, `seriesTitle`, `seriesNote`,
 `conceptsTitle`, `concepts[]`, `ctaTitle`, `ctaLine`, `pages[]`, `contentDir`, `wpm`,
-`dropBannerHeading`, `assetDirs[]`. `MODULES[]`: `slug`, `num`, `title`, `subtitle`, `blurb`,
+`dropBannerHeading`, `assetDirs[]`, `snippetChars`. `MODULES[]`: `slug`, `num`, `title`, `subtitle`, `blurb`,
 `accent`, `accentInk`, `status`, `support[]`, `files[]` (string or `{file,title,kind,short}`).
 
 **Scripts** — `scripts/scaffold.sh <project> [content-src]` (never overwrites an existing
-`catalog.mjs`), `scripts/check_site.mjs` (validator, also wired into CI), `scripts/shots.mjs`
-(screenshot matrix; env: `SHOT_BASE`, `CHROME`, `SHOT_OUT`, `SHOT_QUERY`).
+`catalog.mjs`), `scripts/flatten_tree.mjs <source> <project>` (nested lesson directories -> flat
+content tree; `--units`, `--lesson`, `--assets`, `--unit-intro`, `--keep-num`),
+`scripts/check_site.mjs` (validator, also wired into CI), `scripts/check_diagrams.mjs` (renders
+every mermaid block; needs a running `npm run serve`), `scripts/shots.mjs` (screenshot matrix; env:
+`SHOT_BASE`, `CHROME`, `SHOT_OUT`, `SHOT_QUERY`).
 
 **Templates** — `templates/build/*.mjs`, `templates/src/assets/*`, `templates/package.json`,
 `templates/gitignore`, `templates/ci-build.yml`.
@@ -272,10 +361,12 @@ landing page (localStorage only), heading-first search, `[`/`]` paging, `c` cont
 
 - [ ] Upstream licence identified, honoured, and stated on the About page and in the final report
 - [ ] Author credited in the footer of every page, with links upstream and to their support channels
-- [ ] `npm run build` and `npm run check` both clean
+- [ ] `npm run build`, `npm run check` and (when the source has diagrams) `npm run diagrams` clean
 - [ ] Screenshots reviewed at 1440px and 412px, in light and dark
 - [ ] Every module has its own accent; no placeholder copy (`Module One`, `lorem`) left anywhere
 - [ ] Keyboard map works; reduced-motion and print paths verified
+- [ ] Any vendored runtime ported, re-themed, lazy-loaded per page, and named in the licence split
 - [ ] `docs/` committed, Pages enabled from `/docs`, live URL returns 200 and was opened in a browser
+- [ ] The pushed commit is attributed to the intended GitHub account
 - [ ] README documents build steps and credit; `LICENSE` states the content/code split
 - [ ] No secrets, absolute local paths, or trackers anywhere in the repo

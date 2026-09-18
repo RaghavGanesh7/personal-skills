@@ -1,8 +1,10 @@
 import { SITE, OMITTED } from "./catalog.mjs";
-import { escapeHtml } from "./render.mjs";
+import { escapeHtml, inlineCode } from "./render.mjs";
 
-// Module blurbs are hand-written with markdown-ish backticks; honour just that one bit.
-const rich = (s) => escapeHtml(s).replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+// Hand-written copy (blurbs, ledes, epigraphs) is markdown-ish: honour `code`
+// and **bold**, escape everything else. Leaving ** unhandled ships literal
+// asterisks onto the About page, which is where it always shows up first.
+const rich = inlineCode;
 
 const FAVICON =
   "data:image/svg+xml," +
@@ -17,6 +19,7 @@ export function shell({
   bodyClass = "",
   accent = "",
   content,
+  head = "",   // per-page <head> extras: a lazily-loaded runtime's config, preloads
   scripts = [],
   modules = [],
 }) {
@@ -37,6 +40,7 @@ export function shell({
 <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;1,7..72,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="${rel}assets/styles.css">
 <script>try{var t=localStorage.getItem('course:theme');if(!t)t=matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){}</script>
+${head}
 </head>
 <body class="${bodyClass}"${accent ? ` style="--accent:${accent}"` : ""} data-rel="${rel}">
 <a class="skip-link" href="#main">Skip to content</a>
@@ -146,7 +150,14 @@ function shortcutsSheet() {
 /** The CSS-3D object used as each module's "cover": front face, spine, back board. */
 export function cover(module, { size = "md" } = {}) {
   const n = String(module.num).padStart(2, "0");
-  return `<div class="card3d card3d--${size}" style="--accent:${module.accent};--accent-ink:${module.accentInk || "#111111"}" aria-hidden="true">
+  // The cover is a container-query box so one markup works at 130px and 300px,
+  // but a fixed cqw size still overruns on a long unbreakable word
+  // ("FOUNDATIONS"), and break-word then splits it mid-syllable. Size the type
+  // from the longest word instead: Archivo Black runs ~0.72em per cap, on a
+  // cover 86cqw wide inside its padding.
+  const longest = Math.max(...module.title.split(/\s+/).map((w) => w.length));
+  const titleSize = Math.min(13, Math.round((112 / longest) * 10) / 10);
+  return `<div class="card3d card3d--${size}" style="--accent:${module.accent};--accent-ink:${module.accentInk || "#111111"};--cover-title:${titleSize}cqw" aria-hidden="true">
   <div class="card3d__body">
     <div class="card3d__spine"><span>${escapeHtml(SITE.badge)} · ${escapeHtml(module.title.toUpperCase())}</span></div>
     <div class="card3d__cover">
@@ -370,6 +381,15 @@ export function modulePage(module, { rel = "../", contentHtml }) {
 </main>`;
 }
 
+/** The source's own metadata block, as a definition row under the title. */
+function facts(map = {}) {
+  const keys = Object.keys(map);
+  if (!keys.length) return "";
+  return `<dl class="facts">${keys
+    .map((k) => `<div class="facts__pair"><dt class="label">${escapeHtml(k)}</dt><dd>${rich(map[k])}</dd></div>`)
+    .join("")}</dl>`;
+}
+
 export function lessonPage({ module, lesson, prev, next, contentHtml, rel = "../" }) {
   const outline = lesson.headings
     .filter((h) => h.depth <= 3)
@@ -418,11 +438,13 @@ export function lessonPage({ module, lesson, prev, next, contentHtml, rel = "../
     <header class="page__head">
       <p class="page__crumbs"><a href="${rel}index.html">Home</a> <span>/</span> <a href="index.html">${escapeHtml(module.title)}</a></p>
       <h1 class="page__title">${escapeHtml(lesson.title)}</h1>
+      ${lesson.epigraph ? `<p class="page__lede">${rich(lesson.epigraph)}</p>` : ""}
       <div class="page__meta">
         <span class="chip">${lesson.minutes} min read</span>
         <span class="chip">${lesson.words.toLocaleString("en-US")} words</span>
         <button class="chip chip--btn" type="button" data-mark-read>Mark as read</button>
       </div>
+      ${facts(lesson.facts)}
     </header>
     <div class="prose" data-prose>${contentHtml}</div>
     <nav class="pager" aria-label="Chapter navigation">

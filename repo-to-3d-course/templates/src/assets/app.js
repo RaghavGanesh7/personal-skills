@@ -55,6 +55,47 @@
   };
   $$("[data-theme-toggle]").forEach((b) => b.addEventListener("click", toggleTheme));
 
+  /* ---------------- diagrams ----------------
+     Mermaid is loaded only on pages that contain a diagram, and re-run when the
+     theme flips because mermaid bakes its colours into the SVG it emits. A
+     diagram it cannot draw keeps showing its own source rather than an error. */
+  (function diagrams() {
+    if (!$("pre.mermaid")) return;
+    const sources = $$("pre.mermaid").map((el) => el.textContent);
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
+    script.onload = () => {
+      const render = () => {
+        const dark = document.documentElement.dataset.theme === "dark";
+        $$("pre.mermaid").forEach((el, i) => {
+          el.removeAttribute("data-processed");
+          el.textContent = sources[i];
+        });
+        window.mermaid.initialize({
+          startOnLoad: false,
+          theme: dark ? "dark" : "neutral",
+          securityLevel: "strict",
+          fontFamily: getComputedStyle(document.body).getPropertyValue("--mono") || "monospace",
+        });
+        window.mermaid
+          .run({ nodes: $$("pre.mermaid"), suppressErrors: true })
+          .catch(() => {})
+          .finally(() => {
+            $$("pre.mermaid").forEach((el) => {
+              if (!el.querySelector("svg")) el.closest("figure")?.classList.add("is-unrendered");
+            });
+          });
+      };
+      render();
+      new MutationObserver(render).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
+    };
+    script.onerror = () => $$("pre.mermaid").forEach((el) => el.closest("figure")?.classList.add("is-unrendered"));
+    document.head.appendChild(script);
+  })();
+
   /* ---------------- progress painting ---------------- */
   function paintProgress() {
     const read = readSet();

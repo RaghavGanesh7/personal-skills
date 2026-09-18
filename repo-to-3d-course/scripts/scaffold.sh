@@ -25,6 +25,7 @@ for f in styles.css app.js hero.js; do
   copy "$SKILL_DIR/templates/src/assets/$f" "$PROJECT/src/assets/$f"
 done
 copy "$SKILL_DIR/scripts/check_site.mjs" "$PROJECT/tools/check_site.mjs"
+copy "$SKILL_DIR/scripts/check_diagrams.mjs" "$PROJECT/tools/check_diagrams.mjs"
 copy "$SKILL_DIR/scripts/shots.mjs" "$PROJECT/tools/shots.mjs"
 copy "$SKILL_DIR/templates/package.json" "$PROJECT/package.json"
 copy "$SKILL_DIR/templates/gitignore" "$PROJECT/.gitignore"
@@ -43,4 +44,5 @@ next:
   2. edit build/catalog.mjs — SITE identity, credit, hero lines, then MODULES
   3. npm run build && npm run check
   4. npm run serve   (and, in another shell) npm run shots
+     npm run diagrams  — if the source uses mermaid
 NEXT

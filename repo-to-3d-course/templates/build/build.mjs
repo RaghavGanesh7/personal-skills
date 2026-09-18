@@ -17,6 +17,10 @@ const CONTENT = path.join(root, SITE.contentDir || "content");
 const SRC = path.join(root, "src");
 const OUT = path.join(root, "docs");
 const WPM = SITE.wpm || 220;
+// Search-result snippet length. The index is one JSON file the browser fetches
+// on first search, so on a very large course this number is the download size:
+// ~5,000 entries x 260 chars is 2.2MB (345KB gzipped). Shorten it, not the index.
+const SNIPPET = SITE.snippetChars || 160;
 
 const read = (p) => fs.readFileSync(p, "utf8");
 const write = (p, s) => {
@@ -82,6 +86,8 @@ const modules = MODULES.map((module, moduleIndex) => {
       headings: rendered.headings,
       words: rendered.words,
       minutes: minutes(rendered.words),
+      facts: rendered.facts, // the source's own metadata block, as chips
+      epigraph: rendered.epigraph, // its one-line hook, as a lede
     };
   });
   const words = lessons.reduce((a, l) => a + l.words, 0);
@@ -100,10 +106,8 @@ fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(OUT, { recursive: true });
 fs.writeFileSync(path.join(OUT, ".nojekyll"), "");
 
-fs.mkdirSync(path.join(OUT, "assets"), { recursive: true });
-for (const f of fs.readdirSync(path.join(SRC, "assets"))) {
-  fs.copyFileSync(path.join(SRC, "assets", f), path.join(OUT, "assets", f));
-}
+// recursive: src/assets may hold subdirectories (a vendored runtime, fonts, …)
+fs.cpSync(path.join(SRC, "assets"), path.join(OUT, "assets"), { recursive: true });
 
 // figures ship next to the pages that reference them, so relative src="images/..." keeps working
 for (const module of modules) {
@@ -172,8 +176,10 @@ ${support ? `<aside class="callout callout--tip" data-tag="SUPPORT THE AUTHOR"><
 
     // search index: the lesson itself, then one entry per H2 section
     const url = `${module.slug}/${lesson.file}.html`;
-    index.push({ b: module.title, s: module.slug, c: lesson.title, u: url, h: "", t: plainText(lesson.md).slice(0, 260) });
-    const parts = lesson.md.split(/^##\s+(.+)$/m);
+    index.push({ b: module.title, s: module.slug, c: lesson.title, u: url, h: "", t: plainText(lesson.md).slice(0, SNIPPET) });
+    // split on real headings only: prompt templates and shell transcripts are
+    // full of "## Role" lines *inside* fenced blocks, and those are not anchors
+    const parts = lesson.md.replace(/^```[\s\S]*?^```/gm, "").split(/^##\s+(.+)$/m);
     for (let k = 1; k < parts.length; k += 2) {
       index.push({
         b: module.title,
@@ -181,7 +187,7 @@ ${support ? `<aside class="callout callout--tip" data-tag="SUPPORT THE AUTHOR"><
         c: lesson.title,
         u: `${url}#${slugify(parts[k])}`,
         h: clean(parts[k]),
-        t: plainText(parts[k + 1] || "").slice(0, 260),
+        t: plainText(parts[k + 1] || "").slice(0, SNIPPET),
       });
     }
   });
