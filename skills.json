@@ -4,6 +4,7 @@
     { "path": "chrome-profile-agent" },
     { "path": "work-to-doc" },
     { "path": "homelab-gateway" },
-    { "path": "repo-to-3d-course" }
+    { "path": "repo-to-3d-course" },
+    { "path": "hermes-agent" }
   ]
 }

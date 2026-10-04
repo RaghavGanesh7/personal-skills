@@ -54,6 +54,17 @@ Turn any educational GitHub repository (book, course, handbook, lecture notes) i
 
 ---
 
+### 6. [Hermes Agent](hermes-agent/SKILL.md)
+Run Nous Research's Hermes Agent as an always-on personal assistant on a Linux home server, reachable from anywhere.
+- **Features**:
+  - Read-only `preflight.sh` that reports what is already done: sleep/lid settings, linger, Tailscale, Claude Code login, Hermes install, gateway service.
+  - Runs Hermes on a Claude Pro/Max subscription through the official Claude Code CLI (DirectSDK plugin), with the policy line on what not to do with OAuth tokens. API-key setup as the alternative.
+  - Telegram gateway locked to a numeric-ID allowlist, installed as a boot-time systemd user service with linger.
+  - Remote CLI over Tailscale SSH and optional private dashboard via `tailscale serve` or the homelab-gateway Caddyfile.
+  - Backup, update and troubleshooting runbook.
+
+---
+
 ## Installation & Setup
 
 To make these skills available globally in your Antigravity environment:
@@ -66,6 +77,7 @@ cp -R contract-analyzer ~/.gemini/config/skills/
 cp -R chrome-profile-agent ~/.gemini/config/skills/
 cp -R homelab-gateway ~/.gemini/config/skills/
 cp -R repo-to-3d-course ~/.gemini/config/skills/
+cp -R hermes-agent ~/.gemini/config/skills/
 ```
 
 ### Method 2: Copy to Project Workspace
@@ -77,6 +89,7 @@ cp -R contract-analyzer .agents/skills/
 cp -R chrome-profile-agent .agents/skills/
 cp -R homelab-gateway .agents/skills/
 cp -R repo-to-3d-course .agents/skills/
+cp -R hermes-agent .agents/skills/
 ```
 
 ### Method 3: Team Sharing via `skills.json` (Recommended for Shared Repos)
@@ -88,7 +101,8 @@ To share skills across team projects, include a `skills.json` file in your custo
     { "path": "path/to/personal-skills/chrome-profile-agent" },
     { "path": "path/to/personal-skills/contract-analyzer" },
     { "path": "path/to/personal-skills/homelab-gateway" },
-    { "path": "path/to/personal-skills/repo-to-3d-course" }
+    { "path": "path/to/personal-skills/repo-to-3d-course" },
+    { "path": "path/to/personal-skills/hermes-agent" }
   ]
 }
 ```
