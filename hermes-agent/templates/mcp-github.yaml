@@ -1,0 +1,13 @@
+# Append to ~/.hermes/config.yaml. Token: GITHUB_TOKEN=... in ~/.hermes/.env
+mcp_servers:
+  github:
+    # Official GitHub MCP server (github/github-mcp-server) in a throwaway container.
+    command: "docker"
+    args: ["run", "-i", "--rm",
+           "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+           "-e", "GITHUB_TOOLSETS",
+           "ghcr.io/github/github-mcp-server"]
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: "${GITHUB_TOKEN}"
+      GITHUB_TOOLSETS: "context,repos,issues,pull_requests,actions,notifications"
+    connect_timeout: 60

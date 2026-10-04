@@ -1,0 +1,11 @@
+use_default_settings: true
+
+server:
+  secret_key: "{{GENERATE: openssl rand -hex 32}}"
+  limiter: false        # single local client (Hermes); no need for bot protection
+  image_proxy: true
+
+search:
+  formats:
+    - html
+    - json              # Hermes queries ?format=json; without this SearXNG returns 403

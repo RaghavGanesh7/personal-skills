@@ -169,6 +169,53 @@ The DirectSDK plugin spawns `claude` from the service, so the unit needs `~/.loc
   `hermes dashboard --help`, then either `tailscale serve --bg <port>` or add a Caddy subpath in the
   homelab-gateway Caddyfile. Do not expose it beyond the tailnet.
 
+### Phase 6b: Tools (search, GitHub, browser)
+
+**Web search: SearXNG (free, self-hosted).** Hermes's keyless fallback rotates through rate-limited free tiers.
+A local SearXNG gives unlimited search.
+
+```bash
+mkdir -p ~/searxng/searxng
+cp templates/searxng/docker-compose.yml ~/searxng/         # binds 127.0.0.1:8888 only
+cp templates/searxng/settings.yml ~/searxng/searxng/       # replace secret_key: openssl rand -hex 32
+cd ~/searxng && docker compose up -d
+curl -s "http://localhost:8888/search?q=test&format=json" | python3 -c "import sys,json;print(len(json.load(sys.stdin)['results']))"
+echo 'SEARXNG_URL=http://localhost:8888' >> ~/.hermes/.env
+hermes config set web.search_backend searxng
+```
+
+SearXNG is search-only: `web_extract` keeps using the keyless free tiers unless you set
+`web.extract_backend`. DuckDuckGo/Brave CAPTCHA or 429 warnings in `docker logs searxng` are normal; other
+engines answer. The container chowns `~/searxng/searxng` to its own UID; that's expected.
+
+**GitHub: official MCP server.** There is no GitHub entry in `hermes mcp catalog`, and
+`@modelcontextprotocol/server-github` is deprecated. Run `github/github-mcp-server` in Docker:
+
+```bash
+docker pull ghcr.io/github/github-mcp-server
+cat templates/mcp-github.yaml >> ~/.hermes/config.yaml   # if mcp_servers: already exists, merge by hand
+# User adds the token themselves (agent harnesses may block copying secrets into .env):
+#   GITHUB_TOKEN=github_pat_...   in ~/.hermes/.env
+hermes mcp test github
+systemctl --user restart hermes-gateway
+```
+
+Prefer a fine-grained PAT limited to the repos and permissions Hermes needs. `gh auth token` works, but a
+`gh` login token usually carries broad scopes (`repo`, `admin:public_key`). Env values in `mcp_servers`
+support `${VAR}` from `~/.hermes/.env`.
+
+**Browser: already there.** The installer ships `agent-browser` plus a packaged Chromium. With
+`browser.backend` unset, the agent gets the `browser_exec` tool, driving headless Chromium; it works on a
+server with no display. "check_browser_navigate_requirements returned False" in logs is expected in this
+mode (those are the legacy per-action tools). The `browser-cdp` doctor warning only matters if you want to
+attach your own signed-in Chrome via `/browser connect`. Check with `hermes doctor | grep -i browser`.
+
+**Verify each tool really ran.** One-shot replies alone don't prove it; the model may answer from memory.
+```bash
+T=$(date -u +%FT%T); hermes -z "Call web_search once for 'tailscale serve' and reply with the first URL."
+docker logs --since "$T" searxng | wc -l      # > 0 means SearXNG served it
+```
+
 ### Phase 7: Verify
 
 ```bash
