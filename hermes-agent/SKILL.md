@@ -194,8 +194,10 @@ systemctl --user restart hermes-gateway
 hermes backup && hermes update && hermes config migrate && hermes doctor \
   && systemctl --user restart hermes-gateway
 
-# Nightly backup at 03:00
-(crontab -l 2>/dev/null; echo "0 3 * * * $HOME/.local/bin/hermes backup") | crontab -
+# Nightly backup at 03:00 into a private dir, keep newest 7.
+# Without -o, backups land in ~ as hermes-backup-*.zip. They include .env, so keep the dir mode 700.
+mkdir -p ~/backups/hermes && chmod 700 ~/backups ~/backups/hermes
+(crontab -l 2>/dev/null; echo "0 3 * * * $HOME/.local/bin/hermes backup -o $HOME/backups/hermes/ -k 7 >> $HOME/backups/hermes/backup.log 2>&1") | crontab -
 
 # Restore on a new machine
 hermes import /path/to/backup.tar.gz
