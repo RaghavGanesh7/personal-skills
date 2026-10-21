@@ -65,6 +65,17 @@ Run Nous Research's Hermes Agent as an always-on personal assistant on a Linux h
 
 ---
 
+### 7. [Server Health Check](server-health-check/SKILL.md)
+Verify a Linux home server came back healthy after a reboot, power cut or update, and fix the usual post-boot problems.
+- **Features**:
+  - Read-only `health_check.sh` with `[OK]` / `[WARN]` / `[FAIL]` output and exit codes (0/1/2) for scripting.
+  - Checks systemd (system and user units, linger, suspend), Docker containers against their restart policies, disk, RAM, LAN IP, DNS, internet, Tailscale and HTTPS endpoints.
+  - Log assertions per unit (catch services that are "active" but broken, like a bot that never connected) and arbitrary custom command checks.
+  - Works with zero config via auto-detection; per-host `~/.config/server-health/checks.conf` from a commented template.
+  - Known post-boot fixes table, safe-remediation rules, and an optional boot-time systemd timer.
+
+---
+
 ## Installation & Setup
 
 To make these skills available globally in your Antigravity environment:
@@ -78,6 +89,7 @@ cp -R chrome-profile-agent ~/.gemini/config/skills/
 cp -R homelab-gateway ~/.gemini/config/skills/
 cp -R repo-to-3d-course ~/.gemini/config/skills/
 cp -R hermes-agent ~/.gemini/config/skills/
+cp -R server-health-check ~/.gemini/config/skills/
 ```
 
 ### Method 2: Copy to Project Workspace
@@ -90,6 +102,7 @@ cp -R chrome-profile-agent .agents/skills/
 cp -R homelab-gateway .agents/skills/
 cp -R repo-to-3d-course .agents/skills/
 cp -R hermes-agent .agents/skills/
+cp -R server-health-check .agents/skills/
 ```
 
 ### Method 3: Team Sharing via `skills.json` (Recommended for Shared Repos)
@@ -102,7 +115,8 @@ To share skills across team projects, include a `skills.json` file in your custo
     { "path": "path/to/personal-skills/contract-analyzer" },
     { "path": "path/to/personal-skills/homelab-gateway" },
     { "path": "path/to/personal-skills/repo-to-3d-course" },
-    { "path": "path/to/personal-skills/hermes-agent" }
+    { "path": "path/to/personal-skills/hermes-agent" },
+    { "path": "path/to/personal-skills/server-health-check" }
   ]
 }
 ```

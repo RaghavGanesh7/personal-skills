@@ -5,6 +5,7 @@
     { "path": "work-to-doc" },
     { "path": "homelab-gateway" },
     { "path": "repo-to-3d-course" },
-    { "path": "hermes-agent" }
+    { "path": "hermes-agent" },
+    { "path": "server-health-check" }
   ]
 }
